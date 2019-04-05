@@ -3,15 +3,19 @@ package com.treefrogapps.nearbydevicestest.nearby
 import android.content.Context
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
+import com.treefrogapps.nearbydevicestest.Package
 import com.treefrogapps.nearbydevicestest.di.ApplicationScope
+import com.treefrogapps.nearbydevicestest.nearby.AdvertisingConnection.InboundDevice
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionType.*
+import com.treefrogapps.nearbydevicestest.nearby.DiscoverConnection.DiscoveredDevice
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
-import io.reactivex.Flowable
-import io.reactivex.Observable
+import io.reactivex.Scheduler
 import io.reactivex.processors.PublishProcessor
-import io.reactivex.subjects.PublishSubject
+import io.reactivex.schedulers.Schedulers
+import java.util.*
+import java.util.concurrent.Executors
 
 
 @Module(includes = [ConnectionModule.Static::class]) abstract class ConnectionModule {
@@ -26,25 +30,31 @@ import io.reactivex.subjects.PublishSubject
 
         @Provides
         @ApplicationScope
-        @Connection
+        @NearbyConnection
         @JvmStatic
-        fun serviceName(context: Context): String = context.packageName
+        fun endpointId(@Package packageName : String): String = "$packageName:${UUID.randomUUID()}"
 
         @Provides
         @ApplicationScope
-        @Connection(ADVERTISING)
+        @NearbyConnection
         @JvmStatic
-        fun advertisingMap(): MutableSet<String> = mutableSetOf()
+        fun errorProcessor(): PublishProcessor<ConnectionError> = PublishProcessor.create()
 
         @Provides
         @ApplicationScope
-        @Connection(ADVERTISING)
+        @NearbyConnection
         @JvmStatic
-        fun advertisingSubject(): PublishSubject<MutableMap<String, ConnectionState>> = PublishSubject.create()
+        fun scheduler(): Scheduler = Schedulers.from(Executors.newSingleThreadExecutor { Thread(it, "Connection Manager Thread") })
 
         @Provides
         @ApplicationScope
-        @Connection(ADVERTISING)
+        @NearbyConnection(ADVERTISING)
+        @JvmStatic
+        fun advertisingProcessor(): PublishProcessor<InboundDevice> = PublishProcessor.create()
+
+        @Provides
+        @ApplicationScope
+        @NearbyConnection(ADVERTISING)
         @JvmStatic
         fun advertisingOptions(): AdvertisingOptions =
                 AdvertisingOptions.Builder()
@@ -53,19 +63,13 @@ import io.reactivex.subjects.PublishSubject
 
         @Provides
         @ApplicationScope
-        @Connection(DISCOVER)
+        @NearbyConnection(DISCOVER)
         @JvmStatic
-        fun discoverSet(): MutableSet<String> = mutableSetOf()
+        fun discoverProcessor(): PublishProcessor<DiscoveredDevice> = PublishProcessor.create()
 
         @Provides
         @ApplicationScope
-        @Connection(DISCOVER)
-        @JvmStatic
-        fun discoverSubject(): PublishSubject<MutableSet<String>> = PublishSubject.create()
-
-        @Provides
-        @ApplicationScope
-        @Connection(DISCOVER)
+        @NearbyConnection(DISCOVER)
         @JvmStatic
         fun discoveryOptions(): DiscoveryOptions =
                 DiscoveryOptions.Builder()
@@ -73,27 +77,24 @@ import io.reactivex.subjects.PublishSubject
                         .build()
 
         @Provides
-        @Connection(PAYLOAD)
+        @NearbyConnection(PAYLOAD)
         @ApplicationScope
         @JvmStatic
-        fun payloadSubject(): PublishProcessor<Pair<String, Payload>> = PublishProcessor.create()
+        fun payloadProcessor(): PublishProcessor<Pair<String, Payload>> = PublishProcessor.create()
     }
 
     @Binds
     @ApplicationScope
-    @Connection(ADVERTISING)
-    abstract fun advertisingConnection(connection : AdvertisingConnection)
-            : ObservableConnection<ConnectionLifecycleCallback, AdvertisingOptions, Observable<MutableMap<String, ConnectionState>>>
+    @NearbyConnection(ADVERTISING)
+    abstract fun advertisingConnection(connection: AdvertisingConnection): Connection<ConnectionLifecycleCallback, AdvertisingOptions, InboundDevice>
 
     @Binds
     @ApplicationScope
-    @Connection(DISCOVER)
-    abstract fun discoverConnection(connection : DiscoverConnection)
-            : ObservableConnection<EndpointDiscoveryCallback, DiscoveryOptions, Observable<MutableSet<String>>>
+    @NearbyConnection(DISCOVER)
+    abstract fun discoverConnection(connection: DiscoverConnection): Connection<EndpointDiscoveryCallback, DiscoveryOptions, DiscoveredDevice>
 
     @Binds
     @ApplicationScope
-    @Connection(PAYLOAD)
-    abstract fun payloadConnection(connection: PayloadConnection)
-            : ObservableConnection<PayloadCallback, Unit, Flowable<Pair<String, Payload>>>
+    @NearbyConnection(PAYLOAD)
+    abstract fun payloadConnection(connection: PayloadConnection): Connection<PayloadCallback, Unit, Pair<String, Payload>>
 }

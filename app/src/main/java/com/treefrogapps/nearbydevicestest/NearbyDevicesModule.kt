@@ -9,4 +9,6 @@ import dagger.Provides
 @Module object NearbyDevicesModule {
 
     @Provides @ApplicationScope @JvmStatic fun context(app: NearbyDevicesApp) : Context = app.applicationContext
+
+    @Provides @ApplicationScope @Package @JvmStatic fun packageName(context: Context) : String = context.packageName
 }

@@ -3,6 +3,7 @@ package com.treefrogapps.nearbydevicestest
 import com.treefrogapps.nearbydevicestest.di.ApplicationScope
 import com.treefrogapps.nearbydevicestest.messaging.MessagingActivityBuilder
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionModule
+import com.treefrogapps.nearbydevicestest.service.ConnectionServiceBuilder
 import dagger.BindsInstance
 import dagger.Component
 import dagger.android.support.AndroidSupportInjectionModule
@@ -13,6 +14,7 @@ import dagger.android.support.AndroidSupportInjectionModule
         AndroidSupportInjectionModule::class,
         NearbyDevicesModule::class,
         MessagingActivityBuilder::class,
+        ConnectionServiceBuilder::class,
         ConnectionModule::class]
 )
 @ApplicationScope interface NearbyDevicesComponent {
