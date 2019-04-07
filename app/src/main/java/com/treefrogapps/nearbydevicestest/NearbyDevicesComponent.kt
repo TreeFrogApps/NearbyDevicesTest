@@ -1,6 +1,7 @@
 package com.treefrogapps.nearbydevicestest
 
 import com.treefrogapps.nearbydevicestest.di.ApplicationScope
+import com.treefrogapps.nearbydevicestest.lifecycle.ViewModelModule
 import com.treefrogapps.nearbydevicestest.messaging.MessagingActivityBuilder
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionModule
 import com.treefrogapps.nearbydevicestest.service.ConnectionServiceBuilder
@@ -9,14 +10,13 @@ import dagger.Component
 import dagger.android.support.AndroidSupportInjectionModule
 
 
-@Component(
-    modules = [
-        AndroidSupportInjectionModule::class,
-        NearbyDevicesModule::class,
-        MessagingActivityBuilder::class,
-        ConnectionServiceBuilder::class,
-        ConnectionModule::class]
-)
+@Component(modules = [
+    AndroidSupportInjectionModule::class,
+    NearbyDevicesModule::class,
+    MessagingActivityBuilder::class,
+    ConnectionServiceBuilder::class,
+    ViewModelModule::class,
+    ConnectionModule::class])
 @ApplicationScope interface NearbyDevicesComponent {
 
     @Component.Builder interface Builder {

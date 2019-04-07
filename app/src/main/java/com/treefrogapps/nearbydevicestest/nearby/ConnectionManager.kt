@@ -17,7 +17,6 @@ import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.flowables.ConnectableFlowable
 import io.reactivex.rxkotlin.withLatestFrom
-import timber.log.Timber
 import javax.inject.Inject
 
 
@@ -53,7 +52,6 @@ import javax.inject.Inject
 
         private fun <T> Task<T>.toBlockingResult(): Boolean {
             Tasks.await(this)
-            this.exception?.let { Timber.d(it, "Error thrown performing task") }
             return this.isSuccessful
         }
 
