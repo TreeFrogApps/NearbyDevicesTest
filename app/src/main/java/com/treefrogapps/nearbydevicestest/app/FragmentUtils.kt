@@ -1,4 +1,4 @@
-package com.treefrogapps.nearbydevicestest.util
+package com.treefrogapps.nearbydevicestest.app
 
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -10,6 +10,9 @@ inline fun <reified T : Fragment> createFragment(extras : Bundle?) : Fragment? {
    return of(T::class.java)?.apply { arguments = extras }
 }
 
+inline fun <reified T : Fragment> createFragment() : Fragment? {
+    return of(T::class.java)
+}
 
 fun <T : Fragment> of(t : Class<T>) : T? {
     val ex : Exception?

@@ -66,7 +66,6 @@ import javax.inject.Inject
                     .observeOn(scheduler)
                     .scan(mutableMapOf(), ::reduceInboundConnections)
                     .distinctUntilChanged()
-                    .publish()
                     .replay(1)
 
     private val discoveredDevices: ConnectableFlowable<Map<String, DiscoveredDevice>> =
@@ -74,7 +73,6 @@ import javax.inject.Inject
                     .observeOn(scheduler)
                     .scan(mutableMapOf(), ::reduceDiscoveredDevices)
                     .distinctUntilChanged()
-                    .publish()
                     .replay(1)
 
     private val payloadData: ConnectableFlowable<Pair<String, Payload>> =

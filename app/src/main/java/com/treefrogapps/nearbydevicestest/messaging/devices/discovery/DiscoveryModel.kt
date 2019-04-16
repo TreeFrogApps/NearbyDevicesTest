@@ -1,10 +1,10 @@
-package com.treefrogapps.nearbydevicestest.messaging.devices
+package com.treefrogapps.nearbydevicestest.messaging.devices.discovery
 
 import com.treefrogapps.nearbydevicestest.di.ApplicationScope
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionManager
 import javax.inject.Inject
 
 
-@ApplicationScope class DevicesModel
+@ApplicationScope class DiscoveryModel
 @Inject constructor(private val connectionManager: ConnectionManager) {
 }

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="NearbyDevicesTextAppearance" parent="TextAppearance.AppCompat">
+        <item name="android:textColor">@color/greyMedium</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Small">
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Small.Bold">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Medium">
+        <item name="android:textSize">18sp</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Medium.Bold">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Large">
+        <item name="android:textSize">28sp</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Large.Bold">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+</resources>

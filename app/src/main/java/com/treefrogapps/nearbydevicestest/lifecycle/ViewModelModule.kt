@@ -1,8 +1,10 @@
 package com.treefrogapps.nearbydevicestest.lifecycle
 
 import android.arch.lifecycle.ViewModel
-import com.treefrogapps.nearbydevicestest.messaging.devices.DevicesModel
-import com.treefrogapps.nearbydevicestest.messaging.devices.DevicesViewModel
+import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.AdvertisingModel
+import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.AdvertisingViewModel
+import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.DiscoveryModel
+import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.DiscoveryViewModel
 import com.treefrogapps.nearbydevicestest.messaging.message.MessagesModel
 import com.treefrogapps.nearbydevicestest.messaging.message.MessagesViewModel
 import dagger.Module
@@ -20,6 +22,13 @@ import dagger.multibindings.IntoMap
     @JvmStatic
     @Provides
     @IntoMap
-    @ViewModelKey(DevicesViewModel::class)
-    fun devicesViewModel(model: DevicesModel) : ViewModel = DevicesViewModel(model)
+    @ViewModelKey(DiscoveryViewModel::class)
+    fun discoveryViewModel(model: DiscoveryModel) : ViewModel = DiscoveryViewModel(model)
+
+    @JvmStatic
+    @Provides
+    @IntoMap
+    @ViewModelKey(AdvertisingViewModel::class)
+    fun advertisingViewModel(model: AdvertisingModel) : ViewModel = AdvertisingViewModel(model)
+
 }

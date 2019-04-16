@@ -4,11 +4,11 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".messaging.devices.DevicesFragment">
+        tools:context=".messaging.devices.discovery.AdvertisingFragment">
 
     <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Hello"/>
+            android:text="Advertising Fragment"/>
 
 </FrameLayout>

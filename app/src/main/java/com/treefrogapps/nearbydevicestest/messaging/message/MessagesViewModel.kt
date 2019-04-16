@@ -10,6 +10,7 @@ class MessagesViewModel constructor(private val messagesModel: MessagesModel) : 
         Timber.e("Mark : constructor : hashcode : %d", hashCode())
     }
 
+    // TODO observe all parts of the model that make up the data model - pulbic function oberve and filter data model .. scan, start with empty data model
     data class DataModel(val endpointUser: String = "",
                          val messages: List<Message> = listOf(),
                          val currentMessage: String = "")
