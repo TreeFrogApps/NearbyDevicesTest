@@ -18,8 +18,6 @@ import javax.inject.Inject
         connectionManager.sendMessage(message.toEndpoint, message.let { gson.toBytes(it) })
     }
 
-
-
     @Throws(JsonIOException::class)
     private inline fun <reified T> Gson.toBytes(t : T) : ByteArray {
         return toJson(t, object : TypeToken<T>(){}.type).toByteArray(Charset.defaultCharset())

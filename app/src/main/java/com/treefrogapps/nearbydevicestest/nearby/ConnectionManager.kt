@@ -1,10 +1,7 @@
 package com.treefrogapps.nearbydevicestest.nearby
 
-import android.support.annotation.WorkerThread
 import com.google.android.gms.nearby.connection.*
-import com.google.android.gms.tasks.Task
-import com.google.android.gms.tasks.Tasks
-import com.treefrogapps.nearbydevicestest.Package
+import com.treefrogapps.nearbydevicestest.User
 import com.treefrogapps.nearbydevicestest.di.ApplicationScope
 import com.treefrogapps.nearbydevicestest.nearby.AdvertisingConnection.InboundDevice
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionState.*
@@ -17,21 +14,29 @@ import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.flowables.ConnectableFlowable
 import io.reactivex.rxkotlin.withLatestFrom
+import java.util.function.Supplier
 import javax.inject.Inject
 
 
-@ApplicationScope class ConnectionManager
-@Inject constructor(private val connectionsClient: ConnectionsClient,
-                    @NearbyConnection(ADVERTISING) private val advertisingConnection: Connection<ConnectionLifecycleCallback, AdvertisingOptions, InboundDevice>,
-                    @NearbyConnection(DISCOVER) private val discoveryConnection: Connection<EndpointDiscoveryCallback, DiscoveryOptions, DiscoveredDevice>,
-                    @NearbyConnection(PAYLOAD) private val payloadConnection: Connection<PayloadCallback, Unit, Pair<String, Payload>>,
-                    @NearbyConnection private val endpointId: String,
-                    @NearbyConnection private val scheduler: Scheduler,
-                    @Package private val packageName: String) {
+@ApplicationScope
+class ConnectionManager
+@Inject constructor(
+        private val connectionsClient: ConnectionsClient,
+        @NearbyConnection(DISCOVER) private val discoveryConnection: Connection<EndpointDiscoveryCallback, DiscoveryOptions, DiscoveredDevice>,
+        @NearbyConnection(ADVERTISING) private val advertisingConnection: Connection<ConnectionLifecycleCallback, AdvertisingOptions, InboundDevice>,
+        @NearbyConnection(PAYLOAD) private val payloadConnection: Connection<PayloadCallback, Unit, Pair<String, Payload>>,
+        @NearbyConnection private val endpointId: String,
+        @NearbyConnection private val scheduler: Scheduler,
+        @User private val username: Supplier<String>,
+        private val taskWrapper: TaskDelegate,
+        private val payloadDelegate: PayloadDelegate) {
 
     companion object {
 
-        private fun reduceInboundConnections(connections: Map<String, InboundDevice>, device: InboundDevice): Map<String, InboundDevice> {
+        private fun reduceInboundConnections(
+                connections: Map<String, InboundDevice>,
+                device: InboundDevice
+        ): Map<String, InboundDevice> {
             val updatedConnections = HashMap(connections)
             when (device.state) {
                 CONNECTED,
@@ -41,7 +46,10 @@ import javax.inject.Inject
             return updatedConnections
         }
 
-        private fun reduceDiscoveredDevices(devices: Map<String, DiscoveredDevice>, device: DiscoveredDevice): Map<String, DiscoveredDevice> {
+        private fun reduceDiscoveredDevices(
+                devices: Map<String, DiscoveredDevice>,
+                device: DiscoveredDevice
+        ): Map<String, DiscoveredDevice> {
             val updatedDevices = HashMap(devices)
             when (device.state) {
                 FOUND -> updatedDevices[device.endpointId] = device
@@ -49,29 +57,19 @@ import javax.inject.Inject
             }
             return updatedDevices
         }
-
-        private fun <T> Task<T>.toBlockingResult(): Boolean {
-            Tasks.await(this)
-            return this.isSuccessful
-        }
-
-        private fun <T> Task<T>.toBlocking(): Task<T> {
-            Tasks.await(this)
-            return this
-        }
     }
-
-    private val connectedDevices: ConnectableFlowable<Map<String, InboundDevice>> =
-            advertisingConnection.observe()
-                    .observeOn(scheduler)
-                    .scan(mutableMapOf(), ::reduceInboundConnections)
-                    .distinctUntilChanged()
-                    .replay(1)
 
     private val discoveredDevices: ConnectableFlowable<Map<String, DiscoveredDevice>> =
             discoveryConnection.observe()
                     .observeOn(scheduler)
                     .scan(mutableMapOf(), ::reduceDiscoveredDevices)
+                    .distinctUntilChanged()
+                    .replay(1)
+
+    private val connectedDevices: ConnectableFlowable<Map<String, InboundDevice>> =
+            advertisingConnection.observe()
+                    .observeOn(scheduler)
+                    .scan(mutableMapOf(), ::reduceInboundConnections)
                     .distinctUntilChanged()
                     .replay(1)
 
@@ -84,29 +82,31 @@ import javax.inject.Inject
             Flowable.merge(
                     advertisingConnection.observeErrors(),
                     discoveryConnection.observeErrors(),
-                    payloadConnection.observeErrors())
-                    .publish()
+                    payloadConnection.observeErrors()
+            ).publish()
 
-    @WorkerThread
-    fun startDiscovery(): Boolean =
-            connectionsClient.startDiscovery(
-                    endpointId,
-                    discoveryConnection.callback(),
-                    discoveryConnection.options())
-                    .toBlockingResult()
+    fun startDiscovery(): Single<Boolean> =
+            Single.defer {
+                taskWrapper.toSingle(
+                        connectionsClient.startDiscovery(
+                                endpointId,
+                                discoveryConnection.callback(),
+                                discoveryConnection.options()))
+            }.subscribeOn(scheduler)
 
     fun stopDiscovery() {
         connectionsClient.stopDiscovery()
     }
 
-    @WorkerThread
-    fun startAdvertising(name: String): Boolean =
-            connectionsClient.startAdvertising(
-                    name,
-                    endpointId,
-                    advertisingConnection.callback(),
-                    advertisingConnection.options())
-                    .toBlockingResult()
+    fun startAdvertising(): Single<Boolean> =
+            Single.defer {
+                taskWrapper.toSingle(
+                        connectionsClient.startAdvertising(
+                                username.get(),
+                                endpointId,
+                                advertisingConnection.callback(),
+                                advertisingConnection.options()))
+            }.subscribeOn(scheduler)
 
     fun stopAdvertising() {
         connectionsClient.stopAdvertising()
@@ -116,81 +116,72 @@ import javax.inject.Inject
         connectionsClient.stopAllEndpoints()
     }
 
-    @WorkerThread
+    fun requestConnectionInitiation(remoteEndpointId: String): Single<Boolean> =
+            withDiscoveredDevices(
+                    { devices ->
+                        devices[remoteEndpointId]
+                                ?.takeIf { it.state == FOUND }
+                                ?.let { it.endpointId }
+                                ?.let {
+                                    taskWrapper.toSingle(connectionsClient.requestConnection(username.get(), it, advertisingConnection.callback()))
+                                } ?: Single.error(ConnectionException("Device endpoint $remoteEndpointId not found"))
+                    }, false
+            ).subscribeOn(scheduler)
+
     fun acceptConnection(endpointId: String): Single<Boolean> =
-            withConnectedDevices(endpointId, { id, devices ->
-                devices[id]
-                        ?.takeIf { it.state == INITIATED }
-                        ?.let { it.endpointId }
-                        ?.let { connectionsClient.acceptConnection(it, payloadConnection.callback()).toBlockingResult() }
-                        ?.let { Single.just(it) }
-                        ?: Single.error(ConnectionException())
-            }, false)
+            withConnectedDevices({ devices ->
+                                     devices[endpointId]
+                                             ?.takeIf { it.state == INITIATED }
+                                             ?.let { it.endpointId }
+                                             ?.let { taskWrapper.toSingle(connectionsClient.acceptConnection(it, payloadConnection.callback())) }
+                                     ?: Single.error(ConnectionException())
+                                 }, false).subscribeOn(scheduler)
 
-    @WorkerThread
     fun rejectConnection(endpointId: String): Single<Boolean> =
-            withConnectedDevices(endpointId, { id, devices ->
-                devices[id]
-                        ?.takeIf { it.state == INITIATED }
-                        ?.let { it.endpointId }
-                        ?.let { connectionsClient.rejectConnection(it).toBlockingResult() }
-                        ?.let { Single.just(it) }
-                        ?: Single.error(ConnectionException())
-            }, false)
+            withConnectedDevices({ devices ->
+                                     devices[endpointId]
+                                             ?.takeIf { it.state == INITIATED }
+                                             ?.let { it.endpointId }
+                                             ?.let { taskWrapper.toSingle(connectionsClient.rejectConnection(it)) }
+                                     ?: Single.error(ConnectionException())
+                                 }, false).subscribeOn(scheduler)
 
-    @WorkerThread
-    fun requestConnection(username: String): Single<Boolean> =
-            withDiscoveredDevices(endpointId, { id, devices ->
-                devices[id]
-                        ?.takeIf { it.state == FOUND }
-                        ?.let { it.endpointId }
-                        ?.let { connectionsClient.requestConnection(username, endpointId, advertisingConnection.callback()).toBlockingResult() }
-                        ?.let { Single.just(it) }
-                        ?: Single.error(ConnectionException())
-            }, false)
-
-    @WorkerThread
     fun sendMessage(endpointId: String, bytes: ByteArray): Single<Boolean> =
-            withConnectedDevices(endpointId, { id, devices ->
-                devices[id]
-                        ?.takeIf { it.state == CONNECTED }
-                        ?.let { it.endpointId }
-                        ?.let { connectionsClient.sendPayload(it, Payload.fromBytes(bytes)).toBlockingResult() }
-                        ?.let { Single.just(it) }
-                        ?: Single.error(ConnectionException())
-            }, false)
+            withConnectedDevices({ devices ->
+                                     devices[endpointId]
+                                             ?.takeIf { it.state == CONNECTED }
+                                             ?.let { it.endpointId }
+                                             ?.let { taskWrapper.toSingle(connectionsClient.sendPayload(it, payloadDelegate.fromBytes(bytes))) }
+                                     ?: Single.error(ConnectionException())
+                                 }, false).subscribeOn(scheduler)
 
     fun activeConnections(): Flowable<List<InboundDevice>> =
             connectedDevices
                     .autoConnect()
                     .map { it.values.toList().filter { d -> d.state == CONNECTED } }
 
-    fun inboundConnections(): Flowable<List<InboundDevice>> =
+    fun initiatedConnections(): Flowable<List<InboundDevice>> =
             connectedDevices
                     .autoConnect()
                     .map { it.values.toList().filter { d -> d.state == INITIATED } }
 
     fun discoveredDevices(): Flowable<List<DiscoveredDevice>> =
-            discoveredDevices.autoConnect().map { it.values.toList() }
+            discoveredDevices.autoConnect()
+                    .map { it.values.toList() }
 
     fun payloadData(): Flowable<Pair<String, Payload>> = payloadData
 
-    private fun <T> withConnectedDevices(endpointId: String, fn: (id: String, devices: Map<String, InboundDevice>) -> Single<T>, default: T): Single<T> =
-            connectedDevices.let { devices ->
-                Flowable.just(endpointId)
-                        .observeOn(scheduler)
-                        .withLatestFrom(devices)
-                        .flatMapSingle { devicesMap -> fn.invoke(devicesMap.first, devicesMap.second) }
-                        .first(default)
-            } ?: Single.error(IllegalStateException("No available connections"))
+    private fun <T> withConnectedDevices(fn: (devices: Map<String, InboundDevice>) -> Single<T>, default: T): Single<T> =
+            Flowable.just(Unit)
+                    .observeOn(scheduler)
+                    .withLatestFrom(connectedDevices.autoConnect())
+                    .flatMapSingle { devicesMap -> fn.invoke(devicesMap.second) }
+                    .first(default)
 
-    private fun <T> withDiscoveredDevices(username: String, fn: (s: String, devices: Map<String, DiscoveredDevice>) -> Single<T>, default: T): Single<T> =
-            discoveredDevices.let { devices ->
-                Flowable.just(username)
-                        .observeOn(scheduler)
-                        .withLatestFrom(devices)
-                        .flatMapSingle { devicesMap -> fn.invoke(devicesMap.first, devicesMap.second) }
-                        .first(default)
-            } ?: Single.error(IllegalStateException("No available connections"))
-
+    private fun <T> withDiscoveredDevices(fn: (devices: Map<String, DiscoveredDevice>) -> Single<T>, default: T): Single<T> =
+            Flowable.just(Unit)
+                    .observeOn(scheduler)
+                    .withLatestFrom(discoveredDevices.autoConnect())
+                    .flatMapSingle { devicesMap -> fn.invoke(devicesMap.second) }
+                    .first(default)
 }

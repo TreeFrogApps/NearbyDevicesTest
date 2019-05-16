@@ -6,11 +6,12 @@ import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.support.annotation.UiThread
 import com.treefrogapps.nearbydevicestest.graphics.VectorAnimator.Repeat.INFINITE
+import com.treefrogapps.nearbydevicestest.graphics.VectorAnimator.Repeat.ONE_SHOT
 
 /**
  * Utility Helper class for playing [AnimatedVectorDrawable] objects and handling repeating and callbacks
  */
-class VectorAnimator private constructor(drawables: Array<Drawable>,
+class VectorAnimator private constructor(drawables: Array<Drawable?>,
                                          private val repeatType: Repeat,
                                          private val repeatDelay: Long,
                                          private var onEndListener: OnAnimationEnd?) {
@@ -19,21 +20,30 @@ class VectorAnimator private constructor(drawables: Array<Drawable>,
         /**
          * Factory Methods for creating [VectorAnimator]
          */
-        @JvmStatic fun of(drawables: Array<Drawable>, repeatType: Repeat, repeatDelay: Long) =
-            VectorAnimator(
-                drawables,
-                repeatType,
-                repeatDelay,
-                null
-            )
+        @JvmStatic fun of() =
+                VectorAnimator(arrayOf(),
+                               ONE_SHOT,
+                               0L,
+                               null)
 
-        @JvmStatic fun of(drawables: Array<Drawable>, repeatType: Repeat, repeatDelay: Long, onEndListener: OnAnimationEnd?) =
-            VectorAnimator(
-                drawables,
-                repeatType,
-                repeatDelay,
-                onEndListener
-            )
+        @JvmStatic fun of(repeatType: Repeat, vararg drawables: Drawable?) =
+                VectorAnimator(arrayOf(*drawables),
+                               repeatType,
+                               0L,
+                               null)
+
+        @JvmStatic fun of(repeatType: Repeat, repeatDelay: Long, vararg drawables: Drawable?) =
+                VectorAnimator(arrayOf(*drawables),
+                               repeatType,
+                               repeatDelay,
+                               null)
+
+        @JvmStatic fun of(repeatType: Repeat, repeatDelay: Long, onEndListener: OnAnimationEnd?, vararg drawables: Drawable?) =
+                VectorAnimator(
+                        arrayOf(*drawables),
+                        repeatType,
+                        repeatDelay,
+                        onEndListener)
     }
 
     enum class Repeat {
@@ -53,7 +63,9 @@ class VectorAnimator private constructor(drawables: Array<Drawable>,
      * keep internal set of AnimatedVectorDrawables
      */
     private val animatedDrawables: MutableSet<AnimatedVectorDrawable> =
-            drawables.filter { it is AnimatedVectorDrawable }
+            drawables
+                    .filterNotNull()
+                    .filter { it is AnimatedVectorDrawable }
                     .map { it as AnimatedVectorDrawable }
                     .toMutableSet()
 
@@ -113,4 +125,7 @@ class VectorAnimator private constructor(drawables: Array<Drawable>,
             onEndListener = null
         }
     }
+
+    @UiThread
+    fun isStarted(): Boolean = animatedDrawables.any { it.isRunning }
 }

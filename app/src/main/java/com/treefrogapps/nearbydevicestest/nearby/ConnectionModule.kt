@@ -12,6 +12,7 @@ import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import io.reactivex.Scheduler
+import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.Schedulers
 import java.util.*
@@ -50,7 +51,7 @@ import java.util.concurrent.Executors
         @ApplicationScope
         @NearbyConnection(ADVERTISING)
         @JvmStatic
-        fun advertisingProcessor(): PublishProcessor<InboundDevice> = PublishProcessor.create()
+        fun advertisingProcessor(): BehaviorProcessor<InboundDevice> = BehaviorProcessor.create()
 
         @Provides
         @ApplicationScope
@@ -65,7 +66,7 @@ import java.util.concurrent.Executors
         @ApplicationScope
         @NearbyConnection(DISCOVER)
         @JvmStatic
-        fun discoverProcessor(): PublishProcessor<DiscoveredDevice> = PublishProcessor.create()
+        fun discoverProcessor(): BehaviorProcessor<DiscoveredDevice> = BehaviorProcessor.create()
 
         @Provides
         @ApplicationScope

@@ -1,14 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".messaging.devices.discovery.AdvertisingFragment">
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".messaging.devices.discovery.AdvertisingFragment">
+
+    <android.support.constraint.Guideline
+        android:id="@+id/horizontalGuide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.5" />
 
     <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Discovery Fragment"/>
+        android:id="@+id/discoverySearchingTextView"
+        style="@style/NearbyDevicesTextAppearance.Medium.Accent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@id/discoveryDeviceImageView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="@string/looking_for_devices" />
 
-</FrameLayout>
+    <ImageView
+        android:id="@+id/discoveryDeviceImageView"
+        android:layout_width="@dimen/icon_xlarge"
+        android:layout_height="@dimen/icon_xlarge"
+        android:src="@drawable/avd_searching_for_devices"
+        app:layout_constraintBottom_toTopOf="@id/horizontalGuide"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription" />
+
+    <ImageView
+        android:id="@+id/discoveryDotsImageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/avd_three_dots"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/discoveryDeviceImageView"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/discoveryRemoteUserTextView"
+        style="@style/NearbyDevicesTextAppearance.Medium.Bold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/margin_half"
+        app:layout_constraintBottom_toTopOf="@id/discoveryFoundTextView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/discoveryDotsImageView"
+        tools:text="Test User" />
+
+    <TextView
+        android:id="@+id/discoveryFoundTextView"
+        style="@style/NearbyDevicesTextAppearance.Medium.Accent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/margin_half"
+        android:text="@string/discovered_devices"
+        app:layout_constraintBottom_toTopOf="@id/horizontalGuide"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/discoveryRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/margin_normal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/horizontalGuide" />
+
+</android.support.constraint.ConstraintLayout>

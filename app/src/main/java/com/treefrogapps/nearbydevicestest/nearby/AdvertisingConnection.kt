@@ -8,6 +8,7 @@ import com.treefrogapps.nearbydevicestest.nearby.AdvertisingConnection.InboundDe
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionState.*
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionType.ADVERTISING
 import io.reactivex.Flowable
+import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.PublishProcessor
 import javax.inject.Inject
 
@@ -21,12 +22,12 @@ import javax.inject.Inject
  * If a current connection already exists then new incoming connection for same endpointId is ignored
  */
 @ApplicationScope class AdvertisingConnection
-@Inject constructor(@NearbyConnection(ADVERTISING) private val incomingConnectionsProcessor: PublishProcessor<InboundDevice>,
+@Inject constructor(@NearbyConnection(ADVERTISING) private val incomingConnectionsProcessor: BehaviorProcessor<InboundDevice>,
                     @NearbyConnection(ADVERTISING) private val advertisingOptions: AdvertisingOptions,
                     @NearbyConnection private val errorProcessor: PublishProcessor<ConnectionError>,
                     @Package private val packageName: String) : Connection<ConnectionLifecycleCallback, AdvertisingOptions, InboundDevice> {
 
-    data class InboundDevice(val endpointId : String, val state: ConnectionState, val userName : String?)
+    data class InboundDevice(val endpointId : String, val state: ConnectionState, val userName : String)
 
     /**
      * Callback for [ConnectionsClient.requestConnection] from devices that have discovered this advertising device
@@ -65,6 +66,6 @@ import javax.inject.Inject
     private fun validIncomingConnection(endpointId: String): Boolean = endpointId.startsWith(packageName)
 
     private fun nextEvent(endpointId: String, state: ConnectionState, userName: String?) {
-        incomingConnectionsProcessor.onNext(InboundDevice(endpointId, state, userName))
+        incomingConnectionsProcessor.onNext(InboundDevice(endpointId, state, userName ?: "Unknown Device"))
     }
 }

@@ -6,12 +6,8 @@ import android.support.v4.app.Fragment.InstantiationException
 import timber.log.Timber
 
 
-inline fun <reified T : Fragment> createFragment(extras : Bundle?) : Fragment? {
+inline fun <reified T : Fragment> createFragment(extras : Bundle? = null) : Fragment? {
    return of(T::class.java)?.apply { arguments = extras }
-}
-
-inline fun <reified T : Fragment> createFragment() : Fragment? {
-    return of(T::class.java)
 }
 
 fun <T : Fragment> of(t : Class<T>) : T? {

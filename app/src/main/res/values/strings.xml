@@ -1,9 +1,22 @@
 <resources>
     <string name="app_name">NearbyDevicesTest</string>
-    <string name="start_discovery">Start Discovery</string>
-    <string name="no_connected_devices">No Connected Devices</string>
-    <string name="start_advertising">Start Advertising</string>
     <string name="connected_to">Connected To</string>
     <string name="start_disconnect">Start Disconnect</string>
     <string name="start_messaging">Start Messaging</string>
+
+    <string name="connect_button">Connect</string>
+
+    <!-- Start Fragment -->
+    <string name="no_connected_devices">No Connected Devices</string>
+    <string name="start_discovery">Start Discovery</string>
+    <string name="start_advertising">Start Advertising</string>
+
+
+    <!-- Discovery Fragment -->
+    <string name="discovery_error">Error connecting to remote user</string>
+    <string name="looking_for_devices">Looking for devices</string>
+    <string name="error_discovering">Looking for devices</string>
+    <string name="discovered_devices">Devices found</string>
+    <string name="connecting_to_remote_user">Connecting to %s</string>
+
 </resources>

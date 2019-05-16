@@ -7,4 +7,5 @@ import javax.inject.Inject
 
 @ApplicationScope class AdvertisingModel
 @Inject constructor(private val connectionManager: ConnectionManager) {
+
 }

@@ -28,4 +28,34 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <style name="NearbyDevicesTextAppearance.Small.Accent">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Small.Bold.Accent">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Medium.Accent">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Medium.Bold.Accent">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Large.Accent">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <style name="NearbyDevicesTextAppearance.Large.Bold.Accent">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
 </resources>

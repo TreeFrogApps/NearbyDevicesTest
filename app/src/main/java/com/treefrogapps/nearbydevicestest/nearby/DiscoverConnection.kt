@@ -10,6 +10,7 @@ import com.treefrogapps.nearbydevicestest.nearby.DiscoverConnection.DiscoveredDe
 import com.treefrogapps.nearbydevicestest.nearby.DiscoveryState.FOUND
 import com.treefrogapps.nearbydevicestest.nearby.DiscoveryState.LOST
 import io.reactivex.Flowable
+import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.PublishProcessor
 import javax.inject.Inject
 
@@ -21,7 +22,7 @@ import javax.inject.Inject
  * [com.google.android.gms.nearby.connection.ConnectionsClient.requestConnection]
  */
 @ApplicationScope class DiscoverConnection
-@Inject constructor(@NearbyConnection(DISCOVER) private val connectionProcessor: PublishProcessor<DiscoveredDevice>,
+@Inject constructor(@NearbyConnection(DISCOVER) private val connectionProcessor: BehaviorProcessor<DiscoveredDevice>,
                     @NearbyConnection(DISCOVER) private val connectionOptions: DiscoveryOptions,
                     @NearbyConnection private val errorProcessor: PublishProcessor<ConnectionError>,
                     @Package private val packageName: String) : Connection<EndpointDiscoveryCallback, DiscoveryOptions, DiscoveredDevice> {
