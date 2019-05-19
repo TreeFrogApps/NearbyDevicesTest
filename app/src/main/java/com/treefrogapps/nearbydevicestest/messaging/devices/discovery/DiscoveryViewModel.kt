@@ -1,74 +1,61 @@
 package com.treefrogapps.nearbydevicestest.messaging.devices.discovery
 
-import android.arch.lifecycle.ViewModel
 import android.view.View
+import com.treefrogapps.nearbydevicestest.app.BaseViewModel
 import com.treefrogapps.nearbydevicestest.app.NearbyDevicesResources
 import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.DiscoveryEvent.*
 import com.treefrogapps.nearbydevicestest.nearby.DiscoverConnection.DiscoveredDevice
-import com.treefrogapps.nearbydevicestest.rx.SchedulerSupplier
 import io.reactivex.Flowable
-import io.reactivex.Single
 
-class DiscoveryViewModel(private val discoveryModel: DiscoveryModel,
-                         private val resources: NearbyDevicesResources,
-                         scheduler: SchedulerSupplier) : ViewModel() {
+class DiscoveryViewModel(model: DiscoveryModel,
+                         private val resources: NearbyDevicesResources)
+    : BaseViewModel<DiscoveryViewDataModel, DiscoveryModel, DiscoveryEvent>(model, DiscoveryViewDataModel()) {
 
-    private val dataModelObservable =
-            discoveryModel.observeEvents()
-                    .scan(initialViewDataModel(), ::reduce)
-                    .observeOn(scheduler.main())
-                    .replay(1)
-
-    override fun onCleared() {
-        discoveryModel.onCleared()
-    }
-
-    fun startDiscovery() {
-        discoveryModel.listenForDiscoveredDevices()
-        discoveryModel.startDiscoveringDevices()
+    override fun onFirstLaunch() {
+        super.onFirstLaunch()
+        model.start()
     }
 
     fun connectToDevice(discoveredDevice: DiscoveredDevice) {
-        discoveryModel.requestConnection(discoveredDevice.info?.endpointName.orEmpty(), discoveredDevice.endpointId)
+        model.requestConnection(discoveredDevice.info?.endpointName.orEmpty(), discoveredDevice.endpointId)
     }
 
     fun observeFoundDevices(): Flowable<List<DiscoveredDevice>> =
-            dataModelObservable.autoConnect()
+            dataModelObservable
                     .map(DiscoveryViewDataModel::foundDevices)
                     .distinctUntilChanged()
 
     fun observeRecyclerViewVisibility(): Flowable<Int> =
-            dataModelObservable.autoConnect()
+            dataModelObservable
                     .map(DiscoveryViewDataModel::foundDevices)
                     .map { if (it.isNotEmpty()) View.VISIBLE else View.GONE }
                     .distinctUntilChanged()
 
     fun observeEmptyRecyclerViewTextVisibility(): Flowable<Int> =
-            dataModelObservable.autoConnect()
+            dataModelObservable
                     .map(DiscoveryViewDataModel::foundDevices)
                     .map { if (it.isEmpty()) View.VISIBLE else View.GONE }
                     .distinctUntilChanged()
 
     fun observeRemoteUsername(): Flowable<String> =
-            dataModelObservable.autoConnect()
+            dataModelObservable
                     .map { it.remoteUsername }
 
     fun observeConnectionSuccess(): Flowable<Boolean> =
-            dataModelObservable.autoConnect()
+            dataModelObservable
                     .map(DiscoveryViewDataModel::connectedToRemoteUser)
 
-    fun observeStartAnimating() : Single<Boolean> =
-            dataModelObservable.autoConnect().map(DiscoveryViewDataModel::startAnimations)
-                    .filter { it }
-                    .first(false)
+    fun observeStartAnimating(): Flowable<Boolean> =
+            dataModelObservable.map(DiscoveryViewDataModel::startAnimations)
+                    .distinctUntilChanged()
 
-    private fun reduce(previousDataModel: DiscoveryViewDataModel, event: DiscoveryEvent): DiscoveryViewDataModel {
+    override fun reduce(previousVDM: DiscoveryViewDataModel, event: DiscoveryEvent): DiscoveryViewDataModel {
         return when (event) {
-            is DiscoveringEvent -> previousDataModel.fromDiscoveringEvent(event, resources)
-            is ConnectionEvent  -> previousDataModel.fromConnectionEvent(event, resources)
-            is DevicesEvent     -> previousDataModel.fromDevicesEvent(event)
+            is DiscoveringEvent -> previousVDM.fromDiscoveringEvent(event, resources)
+            is ConnectionEvent  -> previousVDM.fromConnectionEvent(event, resources)
+            is DevicesEvent     -> previousVDM.fromDevicesEvent(event)
+            is ErrorEvent       -> previousVDM.fromErrorEvent(event, resources)
         }
     }
 
-    private fun initialViewDataModel(): DiscoveryViewDataModel = DiscoveryViewDataModel()
 }

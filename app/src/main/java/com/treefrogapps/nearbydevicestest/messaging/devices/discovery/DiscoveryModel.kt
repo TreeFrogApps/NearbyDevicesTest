@@ -2,20 +2,21 @@ package com.treefrogapps.nearbydevicestest.messaging.devices.discovery
 
 import com.treefrogapps.nearbydevicestest.R
 import com.treefrogapps.nearbydevicestest.app.BaseObservableModel
-import com.treefrogapps.nearbydevicestest.app.ErrorEvent
 import com.treefrogapps.nearbydevicestest.di.ApplicationScope
-import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.DiscoveryEvent.*
+import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.DiscoveryEvent.ConnectionEvent
+import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.DiscoveryEvent.DiscoveringEvent
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionException
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionManager
 import com.treefrogapps.nearbydevicestest.rx.SchedulerSupplier
 import io.reactivex.Single
+import io.reactivex.rxkotlin.plusAssign
 import timber.log.Timber
 import java.util.concurrent.TimeUnit.SECONDS
 import javax.inject.Inject
 
 
 @ApplicationScope class DiscoveryModel
-@Inject constructor(private val connectionManager: ConnectionManager,
+@Inject constructor(private val manager: ConnectionManager,
                     private val schedulers: SchedulerSupplier) : BaseObservableModel<DiscoveryEvent>() {
 
     private companion object {
@@ -27,20 +28,20 @@ import javax.inject.Inject
 
     override fun onCleared() {
         super.onCleared()
-        connectionManager.stopDiscovery()
+        manager.stopDiscovery()
 
     }
 
-    fun startDiscoveringDevices() {
-        addDisposable(connectionManager.startDiscovery()
-                              .map { DiscoveringEvent(isDiscovering = it) }
-                              .subscribe(this::pushEvent, Timber::e))
-    }
+    fun start() {
+        disposables += manager.startDiscovery()
+                .map { DiscoveringEvent(isDiscovering = it) }
+                .observeOn(schedulers.main())
+                .subscribe(this::onEvent, Timber::e)
 
-    fun listenForDiscoveredDevices() {
-        addDisposable(connectionManager.discoveredDevices()
-                              .map(::DevicesEvent)
-                              .subscribe(this::pushEvent))
+        disposables += manager.discoveredDevices()
+                .map(DiscoveryEvent::DevicesEvent)
+                .observeOn(schedulers.main())
+                .subscribe(this::onEvent)
     }
 
     /**
@@ -64,29 +65,29 @@ import javax.inject.Inject
      * @param remoteEndpointId the unique id of the remote user device
      */
     fun requestConnection(remoteUsername: String, remoteEndpointId: String) {
-        addDisposable(connectionManager.requestConnectionInitiation(remoteEndpointId)
-                              .toObservable()
-                              .flatMapSingle { requestSuccess ->
-                                  if (requestSuccess) {
-                                      connectionManager.initiatedConnections()
-                                              .map { devices -> devices.filter { d -> d.endpointId == remoteEndpointId } }
-                                              .filter { d -> d.isNotEmpty() }
-                                              .firstOrError()
-                                              .flatMap { connectionManager.acceptConnection(remoteEndpointId) }
-                                  } else connectionError
-                              }.flatMapSingle { connectionSuccess ->
+        disposables += manager.requestConnectionInitiation(remoteEndpointId)
+                .toObservable()
+                .flatMapSingle { requestSuccess ->
+                    if (requestSuccess) {
+                        manager.initiatedConnections()
+                                .map { devices -> devices.filter { d -> d.endpointId == remoteEndpointId } }
+                                .filter { d -> d.isNotEmpty() }
+                                .firstOrError()
+                                .flatMap { manager.acceptConnection(remoteEndpointId) }
+                    } else connectionError
+                }.flatMapSingle { connectionSuccess ->
                     if (connectionSuccess) {
-                        connectionManager.activeConnections()
+                        manager.activeConnections()
                                 .map { devices -> devices.filter { d -> d.endpointId == remoteEndpointId } }
                                 .map { d -> d.isNotEmpty() }
                                 .filter { d -> d }
                                 .firstOrError()
                     } else connectionError
                 }.timeout(CONNECTION_TIMEOUT, SECONDS, schedulers.computation())
-                              .map(this::connectionResultToConnectionEvent)
-                              .startWith(connectionInitiatedEvent(remoteUsername))
-                              .subscribe((this::pushEvent), this::onConnectionError)
-        )
+                .map(this::connectionResultToConnectionEvent)
+                .startWith(connectionInitiatedEvent(remoteUsername))
+                .observeOn(schedulers.main())
+                .subscribe((this::onEvent), this::onConnectionError)
     }
 
     private fun connectionResultToConnectionEvent(isSuccess: Boolean) =
@@ -100,7 +101,7 @@ import javax.inject.Inject
                             remoteUsername = remoteUsername)
 
     private fun onConnectionError(e: Throwable) {
-        pushEvent(connectionResultToConnectionEvent(false))
-        pushErrorEvent(ErrorEvent(R.string.discovery_error, e))
+        onEvent(connectionResultToConnectionEvent(false))
+        onEvent(DiscoveryEvent.ErrorEvent(R.string.discovery_error, e))
     }
 }

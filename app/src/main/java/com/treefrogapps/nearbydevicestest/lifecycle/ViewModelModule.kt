@@ -2,8 +2,8 @@ package com.treefrogapps.nearbydevicestest.lifecycle
 
 import android.arch.lifecycle.ViewModel
 import com.treefrogapps.nearbydevicestest.app.NearbyDevicesResources
-import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.AdvertisingModel
-import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.AdvertisingViewModel
+import com.treefrogapps.nearbydevicestest.messaging.devices.advertising.AdvertisingViewModel
+import com.treefrogapps.nearbydevicestest.messaging.devices.advertising.AdvertisingModel
 import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.DiscoveryModel
 import com.treefrogapps.nearbydevicestest.messaging.devices.discovery.DiscoveryViewModel
 import com.treefrogapps.nearbydevicestest.messaging.message.MessagesModel
@@ -26,13 +26,13 @@ import dagger.multibindings.IntoMap
     @Provides
     @IntoMap
     @ViewModelKey(DiscoveryViewModel::class)
-    fun discoveryViewModel(model: DiscoveryModel, scheduler: SchedulerSupplier, resources: NearbyDevicesResources): ViewModel =
-            DiscoveryViewModel(model, resources, scheduler)
+    fun discoveryViewModel(model: DiscoveryModel, resources: NearbyDevicesResources): ViewModel =
+            DiscoveryViewModel(model, resources)
 
     @JvmStatic
     @Provides
     @IntoMap
     @ViewModelKey(AdvertisingViewModel::class)
-    fun advertisingViewModel(model: AdvertisingModel, scheduler: SchedulerSupplier, resources: NearbyDevicesResources): ViewModel =
-            AdvertisingViewModel(model, resources, scheduler)
+    fun advertisingViewModel(model: AdvertisingModel, resources: NearbyDevicesResources): ViewModel =
+            AdvertisingViewModel(model, resources)
 }

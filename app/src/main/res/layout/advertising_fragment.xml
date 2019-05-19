@@ -1,14 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".messaging.devices.discovery.AdvertisingFragment">
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".messaging.devices.discovery.AdvertisingFragment">
 
     <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Advertising Fragment"/>
+        android:id="@+id/advertisingTV"
+        style="@style/NearbyDevicesTextAppearance.Medium.Accent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@id/advertisingImage"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="@string/waiting_for_connections" />
 
-</FrameLayout>
+    <ImageView
+        android:id="@+id/advertisingImage"
+        android:layout_width="@dimen/icon_xlarge"
+        android:layout_height="@dimen/icon_xlarge"
+        tools:src="@drawable/avd_searching_for_devices"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/advertisingDeviceTV"
+        app:layout_constraintTop_toBottomOf="@id/advertisingImage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="@dimen/margin_normal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="TestUse34333"/>
+
+    <TextView
+        android:id="@+id/advertisingDeviceIdTV"
+        app:layout_constraintTop_toBottomOf="@id/advertisingImage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"
+        android:layout_marginTop="@dimen/margin_normal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="TestUse34333"/>
+    <Button
+        android:id="@+id/advertisingConnectButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/advertisingDeviceTV"
+        android:visibility="invisible"
+        android:layout_marginTop="@dimen/margin_normal"
+        style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
+        android:text="@string/advertising_connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</android.support.constraint.ConstraintLayout>

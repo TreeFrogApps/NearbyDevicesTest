@@ -19,7 +19,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.discovery_fragment.*
 
-class DiscoveryFragment : BaseViewModelInjectionFragment<DiscoveryViewModel, DiscoveryViewDataModel>() {
+class DiscoveryFragment : BaseViewModelInjectionFragment<DiscoveryViewModel, DiscoveryViewDataModel, DiscoveryModel, DiscoveryEvent>() {
 
     private lateinit var discoveryAdapter: BaseRecyclerAdapter<DiscoveredDevice, DiscoveryViewHolder>
     private lateinit var animator: VectorAnimator
@@ -37,9 +37,6 @@ class DiscoveryFragment : BaseViewModelInjectionFragment<DiscoveryViewModel, Dis
         super.onViewCreated(view, savedInstanceState)
         setupView()
         connectDataModel()
-        if (savedInstanceState == null) {
-            viewModel.startDiscovery()
-        }
     }
 
     override fun onDetach() {
@@ -49,7 +46,7 @@ class DiscoveryFragment : BaseViewModelInjectionFragment<DiscoveryViewModel, Dis
 
     private fun setupView() {
         discoveryAdapter = DiscoveryAdapter()
-        disposables += discoveryAdapter.observeCLickedDevice().subscribe(viewModel::connectToDevice)
+        disposables += discoveryAdapter.observeClickEvents().subscribe(viewModel::connectToDevice)
 
         discoveryRecyclerView.layoutManager = LinearLayoutManager(context)
         discoveryRecyclerView.adapter = discoveryAdapter
@@ -58,7 +55,7 @@ class DiscoveryFragment : BaseViewModelInjectionFragment<DiscoveryViewModel, Dis
 
     private fun connectDataModel() {
         disposables.addAll(viewModel.observeFoundDevices().subscribe(this::updateFoundDevices),
-                           viewModel.observeStartAnimating().subscribe({ animator.start() }, { }),
+                           viewModel.observeStartAnimating().subscribe({ if(it) animator.start() else animator.stop() }, { }),
                            viewModel.observeRecyclerViewVisibility().subscribe(discoveryRecyclerView::setVisibility),
                            viewModel.observeEmptyRecyclerViewTextVisibility().subscribe(discoveryFoundTextView::setVisibility),
                            viewModel.observeRemoteUsername().subscribe(discoveryRemoteUserTextView::setText),

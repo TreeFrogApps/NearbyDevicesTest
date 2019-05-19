@@ -26,4 +26,7 @@ data class DiscoveryViewDataModel(val statusText: String = "",
 
     fun fromDevicesEvent(event: DevicesEvent): DiscoveryViewDataModel =
             this.copy(foundDevices = event.foundDevices)
+
+    fun fromErrorEvent(event: ErrorEvent,resources: NearbyDevicesResources): DiscoveryViewDataModel =
+            copy(statusText = resources.getString(event.reason))
 }

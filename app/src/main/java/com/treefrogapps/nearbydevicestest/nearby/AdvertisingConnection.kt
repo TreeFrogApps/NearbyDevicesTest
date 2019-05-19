@@ -31,6 +31,8 @@ import javax.inject.Inject
 
     /**
      * Callback for [ConnectionsClient.requestConnection] from devices that have discovered this advertising device
+     * and requested connection - connections have to be accepted on both sides which calls through to
+     * [ConnectionLifecycleCallback.onConnectionResult]
      */
     private val callback = object : ConnectionLifecycleCallback() {
 

@@ -3,6 +3,7 @@ package com.treefrogapps.nearbydevicestest.messaging.devices.discovery
 import android.arch.lifecycle.ViewModelProviders
 import com.treefrogapps.nearbydevicestest.di.FragmentScope
 import com.treefrogapps.nearbydevicestest.lifecycle.ViewModelFactory
+import com.treefrogapps.nearbydevicestest.messaging.devices.advertising.AdvertisingViewModel
 import dagger.Module
 import dagger.Provides
 

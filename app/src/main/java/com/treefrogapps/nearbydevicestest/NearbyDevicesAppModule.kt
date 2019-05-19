@@ -12,6 +12,7 @@ import com.treefrogapps.nearbydevicestest.di.ApplicationScope
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
+import java.util.*
 import java.util.function.Consumer
 import java.util.function.Supplier
 
@@ -54,7 +55,7 @@ abstract class NearbyDevicesAppModule {
         @ApplicationScope
         @User
         fun usernameSupplier(preferences: SharedPreferences): Supplier<String> =
-                Supplier { preferences.getString(USERNAME_KEY, "Unknown")!! }
+                Supplier { preferences.getString(USERNAME_KEY, "TestUser@${UUID.randomUUID()}") }
 
         @JvmStatic
         @Provides

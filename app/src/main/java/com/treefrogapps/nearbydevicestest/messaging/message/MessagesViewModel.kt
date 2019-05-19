@@ -1,22 +1,18 @@
 package com.treefrogapps.nearbydevicestest.messaging.message
 
-import android.arch.lifecycle.ViewModel
+import com.treefrogapps.nearbydevicestest.app.BaseViewModel
 import com.treefrogapps.nearbydevicestest.app.NearbyDevicesResources
 import com.treefrogapps.nearbydevicestest.rx.SchedulerSupplier
 import io.reactivex.Observable
-import timber.log.Timber
 
-class MessagesViewModel constructor(private val messagesModel: MessagesModel,
+class MessagesViewModel constructor(model: MessagesModel,
                                     private val resources: NearbyDevicesResources,
-                                    schedulerSupplier: SchedulerSupplier) : ViewModel() {
+                                    private val schedulerSupplier: SchedulerSupplier)
 
-    // TODO observe all parts of the model that make up the data model - pulbic function oberve and filter data model .. scan, start with empty data model
-    data class DataModel(val endpointUser: String = "",
-                         val messages: List<Message> = listOf(),
-                         val currentMessage: String = "")
+    : BaseViewModel<MessagesViewDataModel, MessagesModel, MessagesEvent>(model, MessagesViewDataModel()) {
 
-    override fun onCleared() {
-        Timber.e("Mark : onCleared : hashcode : %d", hashCode())
+    override fun reduce(previousVDM: MessagesViewDataModel, event: MessagesEvent): MessagesViewDataModel {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     fun endpointUser(): Observable<String> {
@@ -31,6 +27,4 @@ class MessagesViewModel constructor(private val messagesModel: MessagesModel,
     fun currentMessage(): Observable<String> {
         return Observable.never()
     }
-
-
 }

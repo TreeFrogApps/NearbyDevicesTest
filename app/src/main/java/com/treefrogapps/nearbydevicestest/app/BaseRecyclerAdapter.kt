@@ -39,7 +39,7 @@ abstract class BaseRecyclerAdapter<T, VH : BaseRecyclerAdapter.BaseViewHolder<T>
         notifyItemInserted(dataList.size)
     }
 
-    fun observeCLickedDevice(): Observable<T> = publishSubject
+    fun observeClickEvents(): Observable<T> = publishSubject
 
     abstract class BaseViewHolder<T>(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
 

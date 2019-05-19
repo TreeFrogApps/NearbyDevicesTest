@@ -20,6 +20,10 @@ fun dispose(vararg disposables: Disposable?) {
     }
 }
 
+operator fun CompositeDisposable.minus(disposable: Disposable) {
+    remove(disposable)
+}
+
 fun <T> Observable<T>.withSchedulers(subscribe: Scheduler, observe: Scheduler): Observable<T> =
         compose { it.subscribeOn(subscribe).observeOn(observe) }
 

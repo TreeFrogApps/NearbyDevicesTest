@@ -64,14 +64,14 @@ class ConnectionManager
                     .observeOn(scheduler)
                     .scan(mutableMapOf(), ::reduceDiscoveredDevices)
                     .distinctUntilChanged()
-                    .replay(1)
+                    .publish()
 
     private val connectedDevices: ConnectableFlowable<Map<String, InboundDevice>> =
             advertisingConnection.observe()
                     .observeOn(scheduler)
                     .scan(mutableMapOf(), ::reduceInboundConnections)
                     .distinctUntilChanged()
-                    .replay(1)
+                    .publish()
 
     private val payloadData: ConnectableFlowable<Pair<String, Payload>> =
             payloadConnection.observe()
