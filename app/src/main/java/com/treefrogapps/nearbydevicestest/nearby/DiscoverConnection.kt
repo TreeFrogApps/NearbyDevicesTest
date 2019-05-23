@@ -10,8 +10,8 @@ import com.treefrogapps.nearbydevicestest.nearby.DiscoverConnection.DiscoveredDe
 import com.treefrogapps.nearbydevicestest.nearby.DiscoveryState.FOUND
 import com.treefrogapps.nearbydevicestest.nearby.DiscoveryState.LOST
 import io.reactivex.Flowable
-import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.PublishProcessor
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -22,7 +22,7 @@ import javax.inject.Inject
  * [com.google.android.gms.nearby.connection.ConnectionsClient.requestConnection]
  */
 @ApplicationScope class DiscoverConnection
-@Inject constructor(@NearbyConnection(DISCOVER) private val connectionProcessor: BehaviorProcessor<DiscoveredDevice>,
+@Inject constructor(@NearbyConnection(DISCOVER) private val connectionProcessor: PublishProcessor<DiscoveredDevice>,
                     @NearbyConnection(DISCOVER) private val connectionOptions: DiscoveryOptions,
                     @NearbyConnection private val errorProcessor: PublishProcessor<ConnectionError>,
                     @Package private val packageName: String) : Connection<EndpointDiscoveryCallback, DiscoveryOptions, DiscoveredDevice> {
@@ -32,15 +32,15 @@ import javax.inject.Inject
     private val callback = object : EndpointDiscoveryCallback() {
 
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
-            if (validAdvertiser(endpointId)) {
+            Timber.i("Mark : onEndpointFound : %s, %s", endpointId, info.endpointName)
+            if (validAdvertiser(info.serviceId)) {
                 connectionProcessor.onNext(DiscoveredDevice(endpointId, FOUND, info))
             }
         }
 
         override fun onEndpointLost(endpointId: String) {
-            if (validAdvertiser(endpointId)) {
-                connectionProcessor.onNext(DiscoveredDevice(endpointId, LOST, null))
-            }
+            Timber.i("Mark : onEndpointLost : %s", endpointId)
+            connectionProcessor.onNext(DiscoveredDevice(endpointId, LOST, null))
         }
     }
 
@@ -52,5 +52,5 @@ import javax.inject.Inject
 
     override fun observeErrors(): Flowable<ConnectionError> = errorProcessor
 
-    private fun validAdvertiser(endpointId: String): Boolean = endpointId.startsWith(packageName)
+    private fun validAdvertiser(serviceId: String): Boolean = serviceId == packageName
 }

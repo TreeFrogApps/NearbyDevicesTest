@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import com.treefrogapps.nearbydevicestest.R
 import com.treefrogapps.nearbydevicestest.app.BaseViewModelInjectionFragment
+import com.treefrogapps.nearbydevicestest.app.createFragment
 import com.treefrogapps.nearbydevicestest.graphics.VectorAnimator
 import com.treefrogapps.nearbydevicestest.graphics.VectorAnimator.Companion.of
 import com.treefrogapps.nearbydevicestest.messaging.FragmentTransactionListener
@@ -13,6 +14,7 @@ import com.treefrogapps.nearbydevicestest.messaging.devices.advertising.Advertis
 import com.treefrogapps.nearbydevicestest.messaging.devices.advertising.AdvertisingModel
 import com.treefrogapps.nearbydevicestest.messaging.devices.advertising.AdvertisingViewDataModel
 import com.treefrogapps.nearbydevicestest.messaging.devices.advertising.AdvertisingViewModel
+import com.treefrogapps.nearbydevicestest.messaging.message.MessagesFragment
 import com.treefrogapps.nearbydevicestest.rx.rxFlowableClickListener
 import com.treefrogapps.nearbydevicestest.rx.rxTextViewSubscriber
 import io.reactivex.disposables.CompositeDisposable
@@ -71,6 +73,6 @@ class AdvertisingFragment : BaseViewModelInjectionFragment<AdvertisingViewModel,
     }
 
     private fun onConnected() {
-        // Todo replace fragment via listener to meesages fragment
+        listener?.onReplaceTransaction(createFragment<MessagesFragment>())
     }
 }

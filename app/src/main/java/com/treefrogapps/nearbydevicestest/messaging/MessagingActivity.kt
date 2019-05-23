@@ -9,19 +9,13 @@ import com.treefrogapps.nearbydevicestest.R
 import com.treefrogapps.nearbydevicestest.app.BaseInjectionActivity
 import com.treefrogapps.nearbydevicestest.app.createFragment
 import com.treefrogapps.nearbydevicestest.messaging.start.StartFragment
-import com.treefrogapps.nearbydevicestest.rx.dispose
-import io.reactivex.disposables.Disposable
 
 class MessagingActivity : BaseInjectionActivity(), FragmentTransactionListener {
-
-
-    private var disposable: Disposable? = null
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = R.id.permission_request_code
         private const val PERMISSION = ACCESS_COARSE_LOCATION
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,11 +37,6 @@ class MessagingActivity : BaseInjectionActivity(), FragmentTransactionListener {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults.any { it == PERMISSION_DENIED }) finish()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        dispose(disposable)
     }
 
     override fun onReplaceTransaction(fragment: Fragment?) {

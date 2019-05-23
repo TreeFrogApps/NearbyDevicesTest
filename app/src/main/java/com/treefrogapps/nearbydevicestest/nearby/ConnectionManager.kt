@@ -9,11 +9,15 @@ import com.treefrogapps.nearbydevicestest.nearby.ConnectionType.*
 import com.treefrogapps.nearbydevicestest.nearby.DiscoverConnection.DiscoveredDevice
 import com.treefrogapps.nearbydevicestest.nearby.DiscoveryState.FOUND
 import com.treefrogapps.nearbydevicestest.nearby.DiscoveryState.LOST
+import com.treefrogapps.nearbydevicestest.rx.SchedulerSupplier
+import io.reactivex.Completable
 import io.reactivex.Flowable
-import io.reactivex.Scheduler
 import io.reactivex.Single
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.flowables.ConnectableFlowable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.withLatestFrom
+import timber.log.Timber
 import java.util.function.Supplier
 import javax.inject.Inject
 
@@ -21,15 +25,17 @@ import javax.inject.Inject
 @ApplicationScope
 class ConnectionManager
 @Inject constructor(
-        private val connectionsClient: ConnectionsClient,
+        @NearbyConnection private val connectionsClient: ConnectionsClient,
         @NearbyConnection(DISCOVER) private val discoveryConnection: Connection<EndpointDiscoveryCallback, DiscoveryOptions, DiscoveredDevice>,
         @NearbyConnection(ADVERTISING) private val advertisingConnection: Connection<ConnectionLifecycleCallback, AdvertisingOptions, InboundDevice>,
         @NearbyConnection(PAYLOAD) private val payloadConnection: Connection<PayloadCallback, Unit, Pair<String, Payload>>,
         @NearbyConnection private val endpointId: String,
-        @NearbyConnection private val scheduler: Scheduler,
+        private val schedulers: SchedulerSupplier,
         @User private val username: Supplier<String>,
         private val taskWrapper: TaskDelegate,
         private val payloadDelegate: PayloadDelegate) {
+
+    private val disposables: CompositeDisposable = CompositeDisposable()
 
     companion object {
 
@@ -61,21 +67,21 @@ class ConnectionManager
 
     private val discoveredDevices: ConnectableFlowable<Map<String, DiscoveredDevice>> =
             discoveryConnection.observe()
-                    .observeOn(scheduler)
+                    .subscribeOn(schedulers.io())
                     .scan(mutableMapOf(), ::reduceDiscoveredDevices)
                     .distinctUntilChanged()
-                    .publish()
+                    .replay(1)
 
     private val connectedDevices: ConnectableFlowable<Map<String, InboundDevice>> =
             advertisingConnection.observe()
-                    .observeOn(scheduler)
+                    .subscribeOn(schedulers.io())
                     .scan(mutableMapOf(), ::reduceInboundConnections)
                     .distinctUntilChanged()
-                    .publish()
+                    .replay(1)
 
     private val payloadData: ConnectableFlowable<Pair<String, Payload>> =
             payloadConnection.observe()
-                    .observeOn(scheduler)
+                    .subscribeOn(schedulers.io())
                     .publish()
 
     private val callbackErrors: ConnectableFlowable<ConnectionError> =
@@ -85,34 +91,30 @@ class ConnectionManager
                     payloadConnection.observeErrors()
             ).publish()
 
-    fun startDiscovery(): Single<Boolean> =
-            Single.defer {
-                taskWrapper.toSingle(
-                        connectionsClient.startDiscovery(
-                                endpointId,
-                                discoveryConnection.callback(),
-                                discoveryConnection.options()))
-            }.subscribeOn(scheduler)
+    fun start(): Single<Boolean> {
+        disposables.addAll(discoveredDevices.connect(),
+                           connectedDevices.connect(),
+                           payloadData.connect(),
+                           callbackErrors.connect())
 
-    fun stopDiscovery() {
-        connectionsClient.stopDiscovery()
+        return Single.defer {
+            taskWrapper.toSingle(
+                    connectionsClient.startAdvertising(
+                            username.get(),
+                            endpointId,
+                            advertisingConnection.callback(),
+                            advertisingConnection.options()))
+        }.flatMap {
+            taskWrapper.toSingle(
+                    connectionsClient.startDiscovery(
+                            endpointId,
+                            discoveryConnection.callback(),
+                            discoveryConnection.options()))
+        }.subscribeOn(schedulers.io())
     }
 
-    fun startAdvertising(): Single<Boolean> =
-            Single.defer {
-                taskWrapper.toSingle(
-                        connectionsClient.startAdvertising(
-                                username.get(),
-                                endpointId,
-                                advertisingConnection.callback(),
-                                advertisingConnection.options()))
-            }.subscribeOn(scheduler)
-
-    fun stopAdvertising() {
-        connectionsClient.stopAdvertising()
-    }
-
-    fun reset() {
+    fun stop() {
+        disposables.clear()
         connectionsClient.stopAllEndpoints()
     }
 
@@ -126,7 +128,7 @@ class ConnectionManager
                                     taskWrapper.toSingle(connectionsClient.requestConnection(username.get(), it, advertisingConnection.callback()))
                                 } ?: Single.error(ConnectionException("Device endpoint $remoteEndpointId not found"))
                     }, false
-            ).subscribeOn(scheduler)
+            ).subscribeOn(schedulers.io())
 
     fun acceptConnection(endpointId: String): Single<Boolean> =
             withConnectedDevices({ devices ->
@@ -135,7 +137,7 @@ class ConnectionManager
                                              ?.let { it.endpointId }
                                              ?.let { taskWrapper.toSingle(connectionsClient.acceptConnection(it, payloadConnection.callback())) }
                                      ?: Single.error(ConnectionException())
-                                 }, false).subscribeOn(scheduler)
+                                 }, false).subscribeOn(schedulers.io())
 
     fun rejectConnection(endpointId: String): Single<Boolean> =
             withConnectedDevices({ devices ->
@@ -144,7 +146,21 @@ class ConnectionManager
                                              ?.let { it.endpointId }
                                              ?.let { taskWrapper.toSingle(connectionsClient.rejectConnection(it)) }
                                      ?: Single.error(ConnectionException())
-                                 }, false).subscribeOn(scheduler)
+                                 }, false).subscribeOn(schedulers.io())
+
+    fun disconnectFromEndpoint(endpointId: String) {
+        connectionsClient.disconnectFromEndpoint(endpointId)
+    }
+
+    fun disconnectAllEndpoints() {
+        disposables += withConnectedDevices({ Single.just(it) }, mapOf())
+                .flatMapCompletable { devices ->
+                    devices.filter { device -> device.value.state == CONNECTED }
+                            .forEach { connectionsClient.disconnectFromEndpoint(it.key) }
+                    Completable.complete()
+                }.subscribeOn(schedulers.io())
+                .subscribe { Timber.i("Disconnected All Endpoints") }
+    }
 
     fun sendMessage(endpointId: String, bytes: ByteArray): Single<Boolean> =
             withConnectedDevices({ devices ->
@@ -153,35 +169,32 @@ class ConnectionManager
                                              ?.let { it.endpointId }
                                              ?.let { taskWrapper.toSingle(connectionsClient.sendPayload(it, payloadDelegate.fromBytes(bytes))) }
                                      ?: Single.error(ConnectionException())
-                                 }, false).subscribeOn(scheduler)
+                                 }, false).subscribeOn(schedulers.io())
 
     fun activeConnections(): Flowable<List<InboundDevice>> =
-            connectedDevices
-                    .autoConnect()
-                    .map { it.values.toList().filter { d -> d.state == CONNECTED } }
+            connectedDevices.map { it.values.toList().filter { d -> d.state == CONNECTED } }
+                    .subscribeOn(schedulers.io())
+
 
     fun initiatedConnections(): Flowable<List<InboundDevice>> =
-            connectedDevices
-                    .autoConnect()
-                    .map { it.values.toList().filter { d -> d.state == INITIATED } }
+            connectedDevices.map { it.values.toList().filter { d -> d.state == INITIATED } }
+                    .subscribeOn(schedulers.io())
 
     fun discoveredDevices(): Flowable<List<DiscoveredDevice>> =
-            discoveredDevices.autoConnect()
-                    .map { it.values.toList() }
+            discoveredDevices.map { it.values.toList() }
+                    .subscribeOn(schedulers.io())
 
-    fun payloadData(): Flowable<Pair<String, Payload>> = payloadData
+    fun payloadData(): Flowable<Pair<String, Payload>> = payloadData.subscribeOn(schedulers.io())
 
     private fun <T> withConnectedDevices(fn: (devices: Map<String, InboundDevice>) -> Single<T>, default: T): Single<T> =
             Flowable.just(Unit)
-                    .observeOn(scheduler)
-                    .withLatestFrom(connectedDevices.autoConnect())
+                    .withLatestFrom(connectedDevices)
                     .flatMapSingle { devicesMap -> fn.invoke(devicesMap.second) }
                     .first(default)
 
     private fun <T> withDiscoveredDevices(fn: (devices: Map<String, DiscoveredDevice>) -> Single<T>, default: T): Single<T> =
             Flowable.just(Unit)
-                    .observeOn(scheduler)
-                    .withLatestFrom(discoveredDevices.autoConnect())
+                    .withLatestFrom(discoveredDevices)
                     .flatMapSingle { devicesMap -> fn.invoke(devicesMap.second) }
                     .first(default)
 }

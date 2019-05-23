@@ -6,7 +6,6 @@ import com.treefrogapps.nearbydevicestest.messaging.devices.advertising.Advertis
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionException
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionManager
 import com.treefrogapps.nearbydevicestest.rx.SchedulerSupplier
-import com.treefrogapps.nearbydevicestest.rx.withSchedulers
 import io.reactivex.Single
 import io.reactivex.rxkotlin.plusAssign
 import java.util.concurrent.TimeUnit.SECONDS
@@ -19,14 +18,9 @@ import javax.inject.Inject
 
     private companion object {
         @JvmStatic
-        private val CONNECTION_TIMEOUT = 10L
+        private val CONNECTION_TIMEOUT = 30L
         @JvmStatic
         private val connectionError = Single.error<Boolean>(ConnectionException("Connection Error"))
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        manager.stopAdvertising()
     }
 
     /**
@@ -35,7 +29,7 @@ import javax.inject.Inject
      * accpet of deny the connection
      */
     fun start() {
-        disposables += manager.startAdvertising()
+        disposables += manager.start()
                 .map(::Advertising)
                 .observeOn(schedulers.main())
                 .subscribe(this::onEvent, this::onError)
@@ -44,8 +38,8 @@ import javax.inject.Inject
                 .filter { it.isNotEmpty() }
                 .map { it.first() }
                 .firstElement()
-                .map { Connection(it.endpointId, it.userName, false) }
-                .withSchedulers(schedulers.io(), schedulers.main())
+                .map { Connection(it.endpointId, it.username, false) }
+                .observeOn(schedulers.main())
                 .subscribe(this::onEvent, this::onError)
     }
 

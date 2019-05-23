@@ -11,6 +11,11 @@ class MessagesViewModel constructor(model: MessagesModel,
 
     : BaseViewModel<MessagesViewDataModel, MessagesModel, MessagesEvent>(model, MessagesViewDataModel()) {
 
+    override fun onFirstLaunch() {
+        super.onFirstLaunch()
+        model.listenToConnectedDevice()
+    }
+
     override fun reduce(previousVDM: MessagesViewDataModel, event: MessagesEvent): MessagesViewDataModel {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }

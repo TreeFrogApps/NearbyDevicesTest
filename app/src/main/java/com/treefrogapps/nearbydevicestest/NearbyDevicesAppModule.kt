@@ -54,8 +54,10 @@ abstract class NearbyDevicesAppModule {
         @Provides
         @ApplicationScope
         @User
-        fun usernameSupplier(preferences: SharedPreferences): Supplier<String> =
-                Supplier { preferences.getString(USERNAME_KEY, "TestUser@${UUID.randomUUID()}") }
+        fun usernameSupplier(preferences: SharedPreferences): Supplier<String> {
+            val randomUser = Random().nextInt()
+            return Supplier { preferences.getString(USERNAME_KEY, "Test User :: $randomUser") }
+        }
 
         @JvmStatic
         @Provides

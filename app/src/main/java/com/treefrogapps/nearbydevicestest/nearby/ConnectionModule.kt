@@ -11,12 +11,7 @@ import com.treefrogapps.nearbydevicestest.nearby.DiscoverConnection.DiscoveredDe
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
-import io.reactivex.Scheduler
-import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.PublishProcessor
-import io.reactivex.schedulers.Schedulers
-import java.util.*
-import java.util.concurrent.Executors
 
 
 @Module(includes = [ConnectionModule.Static::class]) abstract class ConnectionModule {
@@ -25,6 +20,7 @@ import java.util.concurrent.Executors
 
         @Provides
         @ApplicationScope
+        @NearbyConnection
         @JvmStatic
         fun connectionsClient(context: Context): ConnectionsClient =
                 Nearby.getConnectionsClient(context)
@@ -33,7 +29,7 @@ import java.util.concurrent.Executors
         @ApplicationScope
         @NearbyConnection
         @JvmStatic
-        fun endpointId(@Package packageName : String): String = "$packageName:${UUID.randomUUID()}"
+        fun endpointId(@Package packageName : String): String = packageName
 
         @Provides
         @ApplicationScope
@@ -43,15 +39,9 @@ import java.util.concurrent.Executors
 
         @Provides
         @ApplicationScope
-        @NearbyConnection
-        @JvmStatic
-        fun scheduler(): Scheduler = Schedulers.from(Executors.newSingleThreadExecutor { Thread(it, "Connection Manager Thread") })
-
-        @Provides
-        @ApplicationScope
         @NearbyConnection(ADVERTISING)
         @JvmStatic
-        fun advertisingProcessor(): BehaviorProcessor<InboundDevice> = BehaviorProcessor.create()
+        fun advertisingProcessor(): PublishProcessor<InboundDevice> = PublishProcessor.create()
 
         @Provides
         @ApplicationScope
@@ -66,7 +56,7 @@ import java.util.concurrent.Executors
         @ApplicationScope
         @NearbyConnection(DISCOVER)
         @JvmStatic
-        fun discoverProcessor(): BehaviorProcessor<DiscoveredDevice> = BehaviorProcessor.create()
+        fun discoverProcessor(): PublishProcessor<DiscoveredDevice> = PublishProcessor.create()
 
         @Provides
         @ApplicationScope

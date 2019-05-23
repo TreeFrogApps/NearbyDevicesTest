@@ -24,8 +24,11 @@ class DiscoveryAdapter : BaseRecyclerAdapter<DiscoveredDevice, DiscoveryAdapter.
         override fun onBind(t: DiscoveredDevice) {
             itemView.deviceEndpointId.text = t.endpointId
             itemView.deviceUsername.text = t.info?.endpointName ?: "unknown user"
+            itemView.deviceConnect.setOnClickListener(this)
         }
 
-        override fun onUnbind() {}
+        override fun onUnbind() {
+            itemView.deviceConnect.setOnClickListener(null)
+        }
     }
 }

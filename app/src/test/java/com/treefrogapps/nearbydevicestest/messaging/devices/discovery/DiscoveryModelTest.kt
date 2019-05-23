@@ -73,7 +73,7 @@ class DiscoveryModelTest {
     }
 
     @Test fun `given start discovery when successful then correct DiscoveringEvents`() {
-        whenever(connectionManager.startDiscovery()).thenReturn(Single.fromCallable { true })
+        whenever(connectionManager.start()).thenReturn(Single.fromCallable { true })
 
         val eventSubscriber: TestSubscriber<DiscoveryEvent> = model.observeEvents().test()
         model.start()
@@ -86,7 +86,7 @@ class DiscoveryModelTest {
     }
 
     @Test fun `given start discovery when unsuccessful then correct DiscoveringEvents`() {
-        whenever(connectionManager.startDiscovery()).thenReturn(Single.fromCallable { false })
+        whenever(connectionManager.start()).thenReturn(Single.fromCallable { false })
 
         val eventSubscriber: TestSubscriber<DiscoveryEvent> = model.observeEvents().test()
         model.start()

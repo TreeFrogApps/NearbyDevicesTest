@@ -21,19 +21,13 @@ import javax.inject.Inject
 
     private companion object {
         @JvmStatic
-        private val CONNECTION_TIMEOUT = 10L
+        private val CONNECTION_TIMEOUT = 30L
         @JvmStatic
         private val connectionError = Single.error<Boolean>(ConnectionException("Connection Error"))
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        manager.stopDiscovery()
-
-    }
-
     fun start() {
-        disposables += manager.startDiscovery()
+        disposables += manager.start()
                 .map { DiscoveringEvent(isDiscovering = it) }
                 .observeOn(schedulers.main())
                 .subscribe(this::onEvent, Timber::e)

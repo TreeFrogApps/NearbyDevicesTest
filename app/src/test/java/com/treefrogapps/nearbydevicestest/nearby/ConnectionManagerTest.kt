@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
+import com.treefrogapps.nearbydevicestest.RxTestScheduler
 import com.treefrogapps.nearbydevicestest.nearby.AdvertisingConnection.InboundDevice
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionState.CONNECTED
 import com.treefrogapps.nearbydevicestest.nearby.ConnectionState.INITIATED
@@ -14,7 +15,6 @@ import com.treefrogapps.nearbydevicestest.nearby.DiscoveryState.FOUND
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.observers.TestObserver
-import io.reactivex.schedulers.Schedulers
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
@@ -356,7 +356,7 @@ class ConnectionManagerTest {
                                     advertisingConnection,
                                     payloadConnection,
                                     endpointId,
-                                    Schedulers.trampoline(),
+                                    RxTestScheduler(),
                                     username,
                                     taskDelegate,
                                     payloadDelegate)
@@ -375,7 +375,7 @@ class ConnectionManagerTest {
                                     advertisingConnection,
                                     payloadConnection,
                                     endpointId,
-                                    Schedulers.trampoline(),
+                                    RxTestScheduler(),
                                     username,
                                     taskDelegate,
                                     payloadDelegate)
